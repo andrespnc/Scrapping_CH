@@ -1,28 +1,81 @@
-library(RSelenium)
-library(wdman)
+#####################
+#Andres Ponce Morales
+#Jan 2019
 
-url <- 'https://www.contraloria.cl/web/cgr/buscar-jurisprudencia2'
-server <- phantomjs(port=5000L)
-browser <- remoteDriver(browserName = "phantomjs", port=5000L)
-browser$open()
-browser$navigate(url)
+#install.packages("Rcrawler")
+library(Rcrawler)
+library(rvest)
+library(dplyr)
+library(stringr)
+library(purrr)
 
-src <- browser$getPageSource()
-substr(src, 1, 1000)
-browser$screenshot(display=TRUE)
+###### STEP1
+# create a numerical variable to match number of total urls with speeches to be crawled
+cr <-seq(1, 96)
 
-#select elements from the website
-# municipales
-state <- browser$findElement(using = 'id', value="muni-search")
-state$sendKeysToElement(list("Municipales"))
-browser$screenshot(display=TRUE)
+##Building a list of URL for accessing
+# URL 
+base_url_cr <- "https://prensa.presidencia.cl/discursos.aspx?page="
 
-#fecha
-party <- browser$findElement(using = 'id', value="muni-search")
-party$sendKeysToElement(list(01-06-2007:01-06-2010))
-browser$screenshot(display=TRUE)
+## 2. biding the list of URL
+l_one <- expand.grid(base_url_cr, cr)
 
-#enviar
-send <- browser$findElement(using = 'id', value="enviar")
-send$clickElement()
-browser$screenshot(display=TRUE)
+#Total url sets binding (all countries urls)
+total <- rbind(l_one)
+total$urls <- paste0(total$Var1, total$Var2)
+total_urls <- total$urls
+total_urls
+
+###### STEP2
+#Use the index variable from crawler for creating the var for loop
+new<- INDEX # i have to run the loop once to copy the format of INDEX and use it later
+# with rbind
+
+#crawler for websites
+for(i in total_urls[1:96]){
+  try(Rcrawler(Website = i, no_cores = 4, no_conn = 4,DIR = "./myrepo", MaxDepth = 1))
+      new <- rbind(new, INDEX)} #new has to previously exist for the loop to work
+
+#Filter for the Urls with speeches
+discursos<-new %>% filter(grepl("id=", Url)) %>% 
+  filter(!grepl(".presidencia\\.aspx.", Url))# matching only websites with speches
+
+# removing this section of the url /discursos.aspx?page=
+discursos<-str_remove_all(discursos$Url,"/discursos\\.aspx.page=[0-9]+")
+
+###### STEP3
+#scrape data and speeches
+
+sample_data<- tibble::tibble(url=discursos)
+
+#save a copy of required urls to avoid the previous process
+write.csv(sample_data, "presidente.csv")
+
+#Functions to scrape speeches and dates
+text_func <- function(x){
+  read_html(x) %>%
+    html_nodes(css = "#main_ltContenido") %>%
+    html_text()
+}
+
+fecha_func <- function(x){
+  read_html(x) %>%
+    html_nodes(css = "#main_ltFEcha") %>%
+    html_text()
+}
+
+#apply functions with mutate
+sample_data_rev <- sample_data %>%
+  mutate(., discursos = map_chr(.x = url, .f = text_func))
+
+
+sample_data_fecha <- sample_data %>%
+  mutate(., fecha = map_chr(.x = url, .f= fecha_func))
+
+#Merging data in one tibble
+sample_data_rev$fecha<- sample_data_fecha$fecha
+
+# erasing pattern 
+sample_data_rev$discursos<-gsub("\\r\\n", "",sample_data_rev$discursos)#eliminar el patron que viene desde el scrapping structure
+
+write.csv(sample_data_rev, "pinera.csv")
