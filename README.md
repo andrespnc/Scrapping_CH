@@ -1,2 +1,2 @@
 # Scrapping_CH
-Scrapping project for NLP analysis in the Chilean administrative jurisprudence
+Scrapping project for NLP analysis in the Chilean Public Administration.
