@@ -1,2 +1,2 @@
 # Scrapping_CH
-Scrapping project for NLP analysis in the Chilean Public Administration.
+Scrapping project for Presidential speeches 2018-2019.
