@@ -4,9 +4,6 @@ author: "Andrés Ponce"
 output: html_notebook
 ---
 
-
-For this assignment I will examine the UN speeches from the Chilean government for two periods. The first period correspond to the military dictatorship of Augusto Pinochet 1973-1989. The second period comprises the speeches given in democracy under the mandates of Patricio Aylwin, Eduardo Frei, Ricardo Lagos, Michelle Bachelet and Sebastian Piñera (1990-2017). In total we obtained 45 documents, 28 for the democratic term and 17 for the pinochet era.
-
 ```{r include=FALSE}
 #install.packages("FactoMineR")
 library(FactoMineR)
