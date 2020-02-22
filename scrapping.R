@@ -44,7 +44,7 @@ discursos<-new %>% filter(grepl("id=", Url)) %>%
 discursos<-str_remove_all(discursos$Url,"/discursos\\.aspx.page=[0-9]+")
 
 ###### STEP3
-#scrape data and speeches
+#scrape data, speeches and Titles
 
 sample_data<- tibble::tibble(url=discursos)
 
@@ -64,6 +64,12 @@ fecha_func <- function(x){
     html_text()
 }
 
+tit_func <- function(x){
+  read_html(x) %>%
+    html_nodes(css = "#main_ltTitulo") %>%
+    html_text()
+}
+
 #apply functions with mutate
 sample_data_rev <- sample_data %>%
   mutate(., discursos = map_chr(.x = url, .f = text_func))
@@ -72,10 +78,19 @@ sample_data_rev <- sample_data %>%
 sample_data_fecha <- sample_data %>%
   mutate(., fecha = map_chr(.x = url, .f= fecha_func))
 
-#Merging data in one tibble
-sample_data_rev$fecha<- sample_data_fecha$fecha
+sample_tit <- sample_data %>%
+  mutate(., tit = map_chr(.x = url, .f= tit_func))
 
 # erasing pattern 
 sample_data_rev$discursos<-gsub("\\r\\n", "",sample_data_rev$discursos)#eliminar el patron que viene desde el scrapping structure
 
-write.csv(sample_data_rev, "pinera.csv")
+#Parsing dates and merging
+sample_disc$fecha <- sample_fecha$fecha %>% {gsub("ENE", "JAN",.)} %>% {gsub("DIC", "DEC",.)} %>% {gsub("AGO", "AUG",.)}%>% {gsub("ABR", "APR",.)} 
+
+  #parse_date(sample_fecha$fecha,"%d %b %Y")
+
+#merging datasets
+sample_disc$fecha <- parse_date(sample_disc$fecha,"%d %b %Y")
+sample_disc$tit <- sample_tit$tit
+
+write.csv(sample_disc, "pinera.csv")
