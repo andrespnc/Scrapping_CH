@@ -11,7 +11,7 @@ library(purrr)
 
 ###### STEP1
 # create a numerical variable to match number of total urls with speeches to be crawled
-cr <-seq(1, 96)
+cr <-seq(1, 98)
 
 ##Building a list of URL for accessing
 # URL 
@@ -32,9 +32,9 @@ new<- INDEX # i have to run the loop once to copy the format of INDEX and use it
 # with rbind
 
 #crawler for websites
-for(i in total_urls[1:96]){
+for(i in total_urls[1:98]){
   try(Rcrawler(Website = i, no_cores = 4, no_conn = 4,DIR = "./myrepo", MaxDepth = 1))
-      new <- rbind(new, INDEX)} #new has to previously exist for the loop to work
+  new <- rbind(new, INDEX)} #new has to previously exist for the loop to work
 
 #Filter for the Urls with speeches
 discursos<-new %>% filter(grepl("id=", Url)) %>% 
@@ -85,12 +85,12 @@ sample_tit <- sample_data %>%
 sample_data_rev$discursos<-gsub("\\r\\n", "",sample_data_rev$discursos)#eliminar el patron que viene desde el scrapping structure
 
 #Parsing dates and merging
-sample_disc$fecha <- sample_fecha$fecha %>% {gsub("ENE", "JAN",.)} %>% {gsub("DIC", "DEC",.)} %>% {gsub("AGO", "AUG",.)}%>% {gsub("ABR", "APR",.)} 
+sample_data_fecha$fecha <- sample_data_fecha$fecha %>% {gsub("ENE", "JAN",.)} %>% {gsub("DIC", "DEC",.)} %>% {gsub("AGO", "AUG",.)}%>% {gsub("ABR", "APR",.)} 
 
-  #parse_date(sample_fecha$fecha,"%d %b %Y")
+#parse_date(sample_fecha$fecha,"%d %b %Y")
 
 #merging datasets
-sample_disc$fecha <- parse_date(sample_disc$fecha,"%d %b %Y")
-sample_disc$tit <- sample_tit$tit
+sample_data_rev$fecha <- parse_date(sample_data_fecha$fecha,"%d %b %Y")
+sample_data_rev$tit <- sample_tit$tit
 
 write.csv(sample_disc, "pinera.csv")
