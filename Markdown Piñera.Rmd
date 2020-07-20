@@ -1,0 +1,336 @@
+---
+title: "Piñera Markdown github"
+author: "Andrés Ponce"
+date: "7/5/2020"
+output: html_notebook
+---
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+#install.packages("FactoMineR")
+library(FactoMineR)
+library(readtext)
+library(quanteda)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(RColorBrewer)
+library(haven)
+library(readxl)
+library(tidyverse)
+library(parallel)
+library(topicmodels)
+library(ldatuning)
+library(stm)
+library(gridExtra)
+#if (!require(devtools)) install.packages("devtools")
+#devtools::install_github("mikaelpoul/tidystm", dependencies = TRUE)
+library(tidystm)
+library(ggthemes)
+library(tidytext)
+library(rmarkdown)
+
+load("/Users/andres/Desktop/Proyecto presidente/Pinera Speeches.RData")
+```
+
+## PINERA
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r message=FALSE, warning=FALSE}
+
+sample_disc<- sample_disc[ order(sample_disc$fecha , decreasing = F),]
+
+#number 582 needs to change depending on the the number of total speeches scrapped
+corpus <- corpus(sample_disc, text_field = "discursos") #creating corpus
+pin<-summary(corpus, 585) %>% arrange(desc(fecha)) #summary of speeches + sorting date in desc order
+
+pin$Month_Yr <- format(as.Date(pin$fecha), "%Y-%m") 
+```
+
+
+```{r Word Frecquency, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+#dfm of title text
+dfm_tit_pin<- sample_disc$tit %>%  dfm(what = "word", remove=c(stopwords("es"), stopwords("en"), "presidente", "piñera", "chile", "da", "va", "van", "hoy","día","año", "chilenos", "chilenas", "además", "vamos", "país", "mil"), #Tokenize democratic speeches
+              remove_punct = TRUE,
+              remove_symbols = TRUE,
+              remove_numbers = TRUE,
+              remove_twitter = TRUE,
+              remove_url = TRUE,
+               remove_hyphens = TRUE,
+              verbose = TRUE, 
+              stem=F,
+              include_docvars = F)  %>%  dfm_trim(min_termfreq = 2, max_termfreq = 600)
+
+
+#Frecquency
+features_dfm_pin_tit <- textstat_frequency(dfm_tit_pin, n =50)
+
+# Sort by reverse frequency order
+features_dfm_pin_tit$feature <- with(features_dfm_pin_tit, reorder(feature, -frequency))
+
+frec_2018<- ggplot(features_dfm_pin_tit, aes(x = feature, y = frequency)) +
+    geom_point() + 
+  labs(x = "Words", y = "Frequency")+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+frec_2018
+```
+#TF_IDF Titulos
+```{r Tf_IDF, include=FALSE}
+tit_words <- sample_disc %>%
+        unnest_tokens(word, tit) %>%
+        count(url,word, sort = TRUE) %>%
+        ungroup()
+
+total_words <- tit_words %>% group_by(url) %>% summarize(total = sum(n))
+book_words <- left_join(tit_words, total_words)
+
+book_words <- tit_words %>%
+        bind_tf_idf(word,url, n)
+book_words
+
+plot_tit<-book_words %>% arrange(desc(tf_idf)) %>% mutate(word = factor(word, levels = unique(word)))
+
+tf_idf<- ggplot(plot_tit[1:50,], aes(x = word, y = tf_idf)) +
+    geom_point() + 
+  labs(x = "Words", y = "TF_IDF Score")+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+tf_idf
+```
+
+## Searching optimal K for STM model
+```{r eval=FALSE, include=FALSE}
+#Searching optimal K number of topics
+ntopics <- searchK(dfm2stm$documents, dfm2stm$vocab, data = dfm2stm$meta,K = c(7, 10, 15, 20, 40), prevalence=~ fecha, set.seed(9999), verbose=F)
+```
+
+```{r eval=FALSE, include=FALSE}
+plot(ntopics)
+```
+
+
+##STM Model
+```{r}
+#dfm of speeches text
+dfm_pin<- corpus %>%  dfm(what = "word", remove=c(stopwords("es"), stopwords("en"), "presidente", "piñera", "chile", "da", "va", "van", "hoy","día","año", "chilenos", "chilenas", "además", "vamos", "país", "mil"),
+              remove_punct = TRUE,
+              remove_symbols = TRUE,
+              remove_numbers = TRUE,
+              remove_twitter = TRUE,
+              remove_url = TRUE,
+               remove_hyphens = TRUE,
+              verbose = TRUE, 
+              stem=F,
+              include_docvars = T)  
+
+
+#STM
+n.topics <- 12
+dfm2stm <- quanteda::convert(dfm_pin, to = "stm")
+dfm2stm$meta$fecha<-with(as.POSIXlt(dfm2stm$meta$fecha), 12 * (year - year[1]) + (mon - mon[1] + 1))
+modell.stm <- stm(dfm2stm$documents, dfm2stm$vocab, data = dfm2stm$meta, K = n.topics, init.type = "Spectral",set.seed(9999), verbose = F)
+
+```
+
+```{r}
+par(bty="n",col="grey40",lwd=5)
+plot.STM(modell.stm, type = "summary", text.cex = 0.8, main = "Topic shares on the corpus as a whole", xlab = "estimated share of topics")
+```
+
+```{r}
+par(bty="n",col="grey40",lwd=5)
+plot.STM(modell.stm, type = "labels", text.cex=0.6) 
+
+```
+
+```{r echo=FALSE}
+par(mar=c(0.5, 0.5, 0.5, 0.5))
+cloud(modell.stm, topic = 2, scale = c(2.25,.5))
+```
+
+```{r echo=FALSE}
+par(mar=c(0.5, 0.5, 0.5, 0.5))
+cloud(modell.stm, topic = 11, scale = c(2.25,.5))
+```
+
+```{r echo=FALSE}
+par(mar=c(0.5, 0.5, 0.5, 0.5))
+cloud(modell.stm, topic = 4, scale = c(2.25,.5))
+```
+
+## top 10 words per topic
+```{r}
+#top 10 words per topic Julia Slinge model
+
+word.prob<-tidytext::tidy(modell.stm) %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+ ungroup() %>%
+    mutate(topic = paste0("Topic ", topic),
+         term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(x = NULL, y = expression(beta),
+       title = "Highest word probabilities for each topic",
+       subtitle = "Different words are associated with different topics")
+```
+
+```{r fig.height=5, fig.width=11}
+word.prob
+```
+
+## Retrieving key metrics from STM model
+```{r include=FALSE}
+#retrieving the stm model key metrics
+
+#modell.stm.labels <- labelTopics(modell.stm, 1:n.topics)
+#dfm2stm$meta$fecha <- as.numeric(dfm2stm$meta$fecha)
+modell.stm.effekt <- estimateEffect(1:n.topics ~ s(fecha), modell.stm,
+                        meta = dfm2stm$meta, uncertainty = "Global")
+
+modell.stm.effekt$data$fecha<- as.numeric(modell.stm.effekt$data$fecha)
+
+#extracting estimation in tidy for better plotting
+effect <- extract.estimateEffect(modell.stm.effekt, "fecha", labeltype = "prob", n=4, model = modell.stm, method="pointestimate")
+
+#including the variable date again into the estimated data
+effect$covariate.value<-as.Date('2018-02-01') + months(effect$covariate.value)
+
+#labeltype = "frex", n=3
+ggplot(effect, aes(x = covariate.value, y = estimate,
+                   ymin = ci.lower, ymax = ci.upper)) +
+  facet_wrap(~ label, nrow = 3) +
+  geom_ribbon(alpha = .5) +
+  geom_line() +
+  labs(x = "Party ID",
+       y = "Expected Topic Proportion",
+       fill = "Treated (0/1)") +
+  theme(legend.position = "bottom")
+```
+
+## Using suvey data "Support"
+
+```{r include=FALSE}
+#Contructing the variable of apoyo, constructed from the data of CADEM Chile, Plaza Publica.
+Apoyo<- effect %>% filter(topic == 7) %>% select(covariate.value)
+Apoyo$apoyo<- c(55,57,56,58,53,46,45,49,41,39,41,42,39,36,34,32,31,32,32,25,13,12,11)
+eff_ep<- effect
+eff_ep$apoyo<-c(55,57,56,58,53,46,45,49,41,39,41,42,39,36,34,32,31,32,32,25,13,12,11)
+eff_ep<-eff_ep %>% mutate(counts = 1) %>% spread(topic, counts, fill=0)
+
+eff_cor<- eff_ep %>% select(-c("method", "covariate", "label", "covariate.value")) 
+lapply(eff_cor, as.numeric)
+cor_1 <- round(cor(eff_cor), 3)
+cor_1
+```
+
+##Plot apoyo + speeches
+```{r echo=FALSE}
+# frecquency of speeches by month-year
+  spcount<-count(pin, Month_Yr) 
+spcount$date <- parse_date(spcount$Month_Yr,"%Y-%m")
+
+spcount$apoyo<- Apoyo$apoyo
+#Plot of frecquency of speeches by month: Distribution of Speeches of President Pinera; Monthly distribution from march 2018
+#to January 2020.
+
+#Trying new plot
+ spcount$Month_Yr <- parse_date(spcount$Month_Yr,"%Y-%m")
+
+plot2<-ggplot(spcount, aes(x = date)) +
+  geom_col(aes( y = n, fill= "skyblue")) +
+  geom_text(aes(y = n, label = n), fontface = "bold", vjust = 1.4, color = "black", size = 3) +
+  geom_line(aes(y = apoyo, group = 1, color = 'black')) +
+  geom_text(aes(y = apoyo, label = paste0(apoyo,"%")), vjust = 0, hjust=0, nudge_y = 1, color = "black", size = 3) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  scale_y_continuous(limits = c(0, 75))+
+  scale_fill_manual('', labels = 'Number of public speeches', values = "skyblue") +
+  scale_color_manual('', labels = '% of Presidential support', values = 'black') +
+  theme_classic()+
+  theme(
+    legend.position = c(.95, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6)
+    )
+
+plot2+labs(x = "Months:2018-2020", y = "Number of speeches - Aproval Rate (%)",
+  title = "Number of Oficial Speeches of President Piñera Against Aproval Rate Over Time",
+    subtitle = "Montly distribution from March 2018 to Jan 2020")
+
+```
+
+##Plotly
+```{r include=FALSE}
+# Plotly for topic shares
+
+effect$topic<-recode(effect$topic, `1` = "Labor & Economic Growth", `2` = "International relations and commerce", `3` = "Araucania Region", `4` = "Women & Human Rights", `5` = "Nation", 
+                            `6` = "Public Transport",  `7` = "Law & Democracy", `8` = "Climate Change and Energy",
+                            `9` = "Public Health",`10` = "Education & Family", `11` = "Security & Crime",
+                             `12` = "Regional Development")
+
+effect$Date <- format(as.Date(effect$covariate.value), "%B-%y") 
+effect<- plyr::rename(effect, c("topic"= "Topic"))
+
+d<-ggplot(effect, aes(x=covariate.value, y=estimate, color=Topic, label=Date)) + 
+    geom_line(alpha=0.6 , size=.5) +
+    viridis::scale_fill_viridis(discrete = T) +
+  scale_x_date(date_breaks = "month", date_labels = "%b")+
+   theme_hc()+ 
+  geom_vline(xintercept = as.numeric(as.Date(c("2019-12-01", "2018-12-01"))), colour = "gray85",linetype=2)+
+  annotate("text", x = as.Date("2019-06-01"), y = 0.35, label = "2019", fontface="bold", colour = "gray85" )+
+  annotate("text", x = as.Date("2018-07-01"), y = 0.35, label = "2018", fontface="bold", colour = "gray85" )+
+  labs(x = "Months:2018-2020", y = "Estimate Topic Proportion (0-1)")
+
+d<- plotly::ggplotly(d, tooltip = c("estimate", "Date","Topic"))%>% plotly::layout(title = list(text = paste0('Topic proportion from presidential speeches over time',
+                                    '<br>',
+                                    '<sup>',
+                                    'Montly values from March 2018 to Jan 2020',
+                                    '</sup>'), x=0.01, y=0.96))
+
+# workaround for taking out the numbers from the legend:
+# ------------------------------------------------------
+p1Names <- unique(effect$Topic) # we need to know the "true" legend values
+for (i in 1:length(d$x$data)) { # this goes over all places where legend values are stored
+  n1 <- d$x$data[[i]]$name # and this is how the value is stored in plotly
+  n2 <- " "
+  for (j in 1:length(p1Names)) {
+    if (grepl(x = n1, pattern = p1Names[j])) {n2 = p1Names[j]} # if the plotly legend name contains the original value, replace it with the original value
+  }
+  d$x$data[[i]]$name <- n2 # now is the time for actual replacement
+  if (n2 == " ") {d$x$data[[i]]$showlegend = FALSE}  # sometimes plotly adds to the legend values that we don't want, this is how to get rid of them, too
+}
+```
+
+```{r echo=FALSE, fig.height=5, fig.width=11, message=FALSE, warning=FALSE}
+d 
+```
+
+
+
+```{r eval=FALSE, include=FALSE}
+#save in htmlwidgets
+#htmlwidgets::saveWidget(d, "plotlyPin.html")
+
+#save plotly and hosted in plotly server
+#library(plotly)
+#Sys.setenv("plotly_username"="Andres1986")
+#Sys.setenv("plotly_api_key"="9nt4TbLhgjdQXam1TlMQ")
+
+#Save to online file
+#api_create(d, filename = "Topics of Pinera Speeches")
+```
+
