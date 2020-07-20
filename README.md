@@ -38,7 +38,7 @@ By plotting the numer of times the Chilean president appears in public to give p
 <img src="/assets/graph1.png">
 </p>  
 
-In the second step I apply the structural topic modelling with the `stm` package. The stm packages allows the researcher to estimate a model using document covariates. In this case I used date to see how the proportion of topics varies across time (months). I choosed `Plotly` _(hosted in plotly studio: [Click here or image](https://chart-studio.plotly.com/~Andres1986/1.embed?share_key=hkHUmY5lfL9zZc8nYvfVga))_ to visualize topic trends over time. For instance, the topic of **_Security & Crime_** is a recurrent topic in the president's speeches. Coincidentally, this topic shows a proportion spike by the end of 2018 and 2019, when the government suffered from police brutality scandals, first for killing an unarmed indigenous civilian and then for police repression in the social upheaval.    
+In the second step I apply the structural topic modelling with the `stm` package. The stm packages allows the researcher to estimate a model using document covariates. In this case I used date to see how the proportion of topics varies across time (months). I choosed `Plotly` _(hosted in plotly studio: [Click here](https://chart-studio.plotly.com/~Andres1986/1.embed?share_key=hkHUmY5lfL9zZc8nYvfVga))_ to visualize topic trends over time. For instance, the topic of **_Security & Crime_** is a recurrent topic in the president's speeches. Coincidentally, this topic shows a proportion spike by the end of 2018 and 2019, when the government suffered from police brutality scandals, first for killing an unarmed indigenous civilian and then for police repression in the social upheaval.    
 
 <p align="center">
 <img src="/assets/captura.png">
