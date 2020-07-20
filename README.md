@@ -28,9 +28,11 @@ Scraping text is straightforward with Rvest. I created a function containing thr
 
 <p align="center">
 <img src="/assets/speech.png">
-</p>  
+</p>
+
 ## Analysing text & structured topic modelling <a name="paragraph2"></a>
 By plotting the numer of times the Chilean president appears in public to give public speeches I found a substantial decrease after November of 2020. This is coincidental with the fact that, during this time, Chile experienced a social uprising leading the government to an all-time minimun rate of public support according to **_CADEM_** [^3].
+
 
 <p align="center">
 <img src="/assets/graph1.png">
