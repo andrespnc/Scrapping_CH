@@ -18,9 +18,7 @@ This project, runned completely in R, consists of two parts. First, the scrappin
 </p>
 
 ## Scrapping Presidential Press Website <a name="paragraph1"></a>
-The scrapping process takes advantage of the URL structure `https://prensa.presidencia.cl/discursos.aspx` by using the Rcrawler library[^1] and Rvest[^2].
-
-The speeches tab "discursos" contains 97 pages (at the time I did this). Each of these pages has at most 6 links to speeches, so 582 separate pages containing one speech each one. If we access a particular page we notice that each one of them has a URL pattern followed by a number https://prensa.presidencia.cl/discurso.aspx?id=135058. This pattern is used to identify speech pages from `Rcrawler` output.
+The scrapping process takes advantage of the URL structure `https://prensa.presidencia.cl/discursos.aspx` by using the Rcrawler library [^1] and Rvest [^2]. The speeches tab "discursos" contains 97 pages (at the time I did this). Each of these pages has at most 6 links to speeches, so 582 separate pages containing one speech each one. If we access a particular page we notice that each one of them has a URL pattern followed by a number https://prensa.presidencia.cl/discurso.aspx?id=135058. This pattern is used to identify speech pages from `Rcrawler` output.
 
 <p align="center">
 <img src="/assets/Lists of urls.png">
