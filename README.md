@@ -31,6 +31,16 @@ Scraping text is straightforward with Rvest. I created a function containing thr
 </p>
 
 ## Analysing text & structured topic modelling <a name="paragraph2"></a>
+The number 582 speeches scrapped are shown by monthly count as follow:
+
+_Montlhy count of presidential speeches since Piñera took office in March 2018_
+|_Year_|_Jan_|_Feb_|_Mar_|_Apr_|_May_|_Jun_|_Jul_|_Aug_|_Sep_|_Oct_|_Nov_|_Dec_|_Total_|
+|:-----|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|------:|
+| _2018_ |     |     |  18 | 30  | 27  | 30  | 27  | 39  | 27  | 50  | 25  |  29 | __302__   |
+| _2019_ | 37  | 22  | 18  | 20  | 29  | 22  | 27  | 25  | 25  | 23  | 11  |  12 | __271__   |
+| _2020_ |  9  |  
+|_**Total**_|__46__|__22__  | __36__  | __50__  | __56__  | __52__  | __54__  | __64__  | __52__  | __73__  | __36__  |  __39__ |   __582__  |
+
 By plotting the numer of times the Chilean president appears in public to give public speeches I found a substantial decrease after November of 2020. This is coincidental with the fact that, during this time, Chile experienced a social uprising leading the government to an all-time minimun rate of public support according to **_CADEM_** [^3].
 
 
